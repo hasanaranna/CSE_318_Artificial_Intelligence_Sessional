@@ -43,7 +43,10 @@ app.post("/move", (req, res) => {
 });
 
 app.get("/ai-move", (req, res) => {
-  exec(`python3 "${ENGINE_PATH}"`, (error, stdout, stderr) => {
+  // console.log("Blue AI move requested");
+  who = "BlueAI";
+  const cmd = `python3 "${ENGINE_PATH}" ${who}`;
+  exec(cmd, (error, stdout, stderr) => {
     if (error) {
       console.error(`Error running engine: ${error.message}`);
       return res.status(500).send({ error: "AI failed to move." });
@@ -54,6 +57,23 @@ app.get("/ai-move", (req, res) => {
     return res.send({ status: "success" });
   });
 });
+
+app.get("/my-ai-move", (req, res) => {
+  // console.log("Red AI move requested");
+  who = "RedAI";
+  const cmd = `python3 "${ENGINE_PATH}" ${who}`;
+  exec(cmd, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error running engine: ${error.message}`);
+      return res.status(500).send({ error: "AI failed to move." });
+    }
+    if (stderr) {
+      console.error(`Engine stderr: ${stderr}`);
+    }
+    return res.send({ status: "success" });
+  });
+}
+);
 
 app.get("/refresh", (req, res) => {
   try {
@@ -74,6 +94,28 @@ app.get("/refresh", (req, res) => {
     return res.status(500).send({ error: "Failed to refresh board." });
   }
 });
+
+app.get("/start", (req, res) => {
+  try {
+    const fs = require("fs");
+    const path = require("path");
+
+    fs.writeFileSync(GLOBAL_TXT_PATH, "");
+
+    fs.writeFileSync(FIRST_MOVE_DONE_PATH, "False");
+
+    const initialBoard =
+      "Red AI Move:\n" + Array(9).fill("0 0 0 0 0 0").join("\n");
+    fs.writeFileSync(FILE_PATH, initialBoard);
+
+    return res.send({ status: "success" });
+
+  } catch (error) {
+    console.error("Error starting game:", error);
+    return res.status(500).send({ error: "Failed to start game." });
+  }
+}
+);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

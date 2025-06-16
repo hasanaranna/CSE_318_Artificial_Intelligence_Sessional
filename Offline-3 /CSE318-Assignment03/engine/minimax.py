@@ -1,7 +1,7 @@
 # engine/minimax.py
 from copy import deepcopy
 from gamecore import play_move
-from heuristics import evaluate
+from heuristics import heuristic_evaluation
 import config
 
 def write_to_global_file(content):
@@ -12,42 +12,46 @@ ROWS, COLS = 9, 6
 
 def valid_moves(board, color):
     moves = []
-    for r in range(ROWS):
-        for c in range(COLS):
-            cell = board[r][c]
+    for row in range(ROWS):
+        for column in range(COLS):
+            cell = board[row][column]
             if cell == '0' or cell.endswith(color):
-                moves.append((r, c))
+                moves.append((row, column))
     return moves
 
 def minimax(board, depth, alpha, beta, maximizingPlayer, color):
-    # opponent = 'R' if color == 'B' else 'B'
+
+    myAI_heuristic = 1
+    AI_heuristic = 1
+
+    if color == 'R':
+        heuristic_no = myAI_heuristic
+    else:
+        heuristic_no = AI_heuristic
+    
     if color == 'B':
         opponent = 'R'
     else:
         opponent = 'B'
 
-    # current_color = color if maximizingPlayer else opponent
     if maximizingPlayer:
         current_color = color
     else:
         current_color = opponent
 
     if depth == 0:
-        return evaluate(board, color), None
+        return heuristic_evaluation(board, color, heuristic_no), None
 
     best_move = None
     moves = valid_moves(board, current_color)
 
     if not moves:
-        return evaluate(board, color), None
+        return heuristic_evaluation(board, color), None
 
     if maximizingPlayer:
         maxEval = float('-inf')
         for move in moves:
-            # write_to_global_file(f"Evaluating move: {move} for color: {current_color}")
             new_board = play_move(deepcopy(board), move[0], move[1], current_color)
-            # write_to_global_file(new_board + '\n')
-
             eval, _ = minimax(new_board, depth - 1, alpha, beta, False, color)
             if eval > maxEval:
                 maxEval = eval

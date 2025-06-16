@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -11,7 +11,13 @@ function App() {
   const [winner, setWinner] = useState(null);
   const [loading, setLoading] = useState(true);
   const [whoseTurn, setWhoseTurn] = useState("Red");
+  const whoseTurnRef = useRef(whoseTurn);
+  useEffect(() => {
+    whoseTurnRef.current = whoseTurn;
+  }, [whoseTurn]);
+
   const [invalidMove, setInvalidMove] = useState(false);
+  const [first_player, setFirstPlayer] = useState("self");
 
   const fetchBoard = async () => {
     const res = await axios.get("http://localhost:4000/state");
@@ -26,7 +32,7 @@ function App() {
   };
 
   const handleClick = async (r, c) => {
-    if (winner || whoseTurn === "AI") return;
+    if (winner || whoseTurn === "blue" || first_player === "ai") return;
 
     const response = await axios.post("http://localhost:4000/move", {
       row: r,
@@ -57,6 +63,18 @@ function App() {
     }
   };
 
+  const myAIMove = async () => {
+    if (whoseTurn === "Blue") return;
+    const response = await axios.get("http://localhost:4000/my-ai-move");
+    if (response.data.status === "success") {
+      setWhoseTurn("Blue");
+      console.log("My AI moved:", response.data.move);
+      fetchBoard();
+    } else {
+      console.error("My AI move failed:", response.data.error);
+    }
+  };
+
   const handleRefreshBoard = async () => {
     setLoading(true);
     const response = await axios.get("http://localhost:4000/refresh");
@@ -65,7 +83,38 @@ function App() {
       fetchBoard();
     }
     setLoading(false);
-  }
+  };
+
+  const handleStart = async () => {
+    const response = await axios.get("http://localhost:4000/start");
+    if (response.data.status === "success") {
+      console.log("AI vs AI game started");
+      setWhoseTurn("Red");
+      fetchBoard();
+      runAIBattle();
+      // setTimeout(runAIBattle, 1000);
+    } else {
+      console.error("Failed to start AI vs AI game:", response.data.error);
+    }
+  };
+
+  const runAIBattle = async () => {
+    // console.log("Inside runAIBatlle: ", whoseTurn);
+    if (winner) return;
+
+    if (whoseTurnRef.current === "Red") {
+      await myAIMove();
+      setWhoseTurn("Blue");
+    } else {
+      await aiMove();
+      setWhoseTurn("Red");
+    }
+
+    await fetchBoard();
+    if (!winner) {
+      setTimeout(runAIBattle, 1000);
+    }
+  };
 
   useEffect(() => {
     fetchBoard();
@@ -74,14 +123,44 @@ function App() {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="container mt-5">
+    <div
+      className="container mt-5"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+      }}
+    >
       {winner && (
         <div className="alert alert-success">
-          🎉 Game Over! <strong>{winner}</strong> wins!
+          Game Over! <strong>{winner}</strong> wins!
         </div>
       )}
 
-      <h2 className="mb-3">Chain Reaction Game (Red vs AI)</h2>
+      <div className="mb-3">
+        <label htmlFor="first-player-select" className="form-label">
+          First Player:
+        </label>
+        <select
+          id="first-player-select"
+          className="form-select"
+          value={first_player}
+          onChange={(e) => setFirstPlayer(e.target.value)}
+          style={{
+            maxWidth: "200px",
+            display: "inline-block",
+            marginLeft: "10px",
+          }}
+        >
+          <option value="self">Self</option>
+          <option value="ai">My AI</option>
+        </select>
+      </div>
+
+      <h1 className="text-center">Chain Reaction</h1>
+      <h2 className="text-center">"{first_player}/Red" vs "AI/Blue"</h2>
       <p>
         Current Turn: <strong>{whoseTurn}</strong>
       </p>
@@ -137,6 +216,13 @@ function App() {
           Refresh Board
         </button>
       </div>
+      {first_player === "ai" && (
+        <div className="mt-3">
+          <button className="btn btn-secondary" onClick={handleStart}>
+            Start AI vs AI
+          </button>
+        </div>
+      )}
     </div>
   );
 }

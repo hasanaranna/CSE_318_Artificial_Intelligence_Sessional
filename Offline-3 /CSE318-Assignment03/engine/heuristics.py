@@ -8,11 +8,13 @@ def count_orbs(board, color):
                 count += int(cell[0])
     return count
 
-def evaluate(board, color):
-    # Basic heuristic: difference in total orb count
-    # opponent = 'R' if color == 'B' else 'B'
+def heuristic_evaluation(board, color, heuristic_no=1):
     if color == 'B':
         opponent = 'R'
     else:
         opponent = 'B'
-    return count_orbs(board, color) - count_orbs(board, opponent)
+
+    if heuristic_no == 1:
+        return count_orbs(board, color) - count_orbs(board, opponent)
+    
+    return 0

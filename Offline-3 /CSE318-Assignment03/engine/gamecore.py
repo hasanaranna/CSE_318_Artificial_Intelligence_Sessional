@@ -11,8 +11,7 @@ def get_critical_mass(row, column):
     else:
         return 4
 
-# def in_bounds(r, c):
-#     return 0 <= r < ROWS and 0 <= c < COLS
+
 def check_whether_within_range(row, column):
     if row < 0 or row >= ROWS:
         return False
@@ -25,44 +24,25 @@ def explode(board, row, column, color):
     while queue:
         row, column = queue.pop(0)
         cell = board[row][column]
-        # if cell == '0':
-        #     count, current_color = 0, color
-        # else:
-        #     count, current_color = int(cell[0]), cell[1]
-        # count, current_color = int(board[r][c][0]), board[r][c][1]
+        
         orb_count = int(cell[0])
         critical_mass = get_critical_mass(row, column)
         if orb_count < critical_mass:
             continue
 
         board[row][column] = '0'
+        possible_moves = [(-1,0),(1,0),(0,-1),(0,1)]
 
-        for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)]:
-            new_row, new_column = row + dr, column + dc
+        for row_deviation, column_deviation in possible_moves:
+            new_row, new_column = row + row_deviation, column + column_deviation
             if check_whether_within_range(new_row, new_column):
                 neighbor_cell = board[new_row][new_column]
-                # if neighbor == '0':
-                #     board[nr][nc] = f'1{color}'
-                # else:
-                #     n_count, n_color = int(neighbor[0]), neighbor[1]
-                #     n_count += 1
-                #     board[nr][nc] = f'{n_count}{color}'
+            
                 new_orb_count = int(neighbor_cell[0]) + 1
                 board[new_row][new_column] = f'{new_orb_count}{color}'
 
                 if int(board[new_row][new_column][0]) >= get_critical_mass(new_row, new_column):
                     queue.append((new_row, new_column))
-
-# def play_move(board, row, column, color):
-#     new_board = deepcopy(board)
-#     cell = new_board[row][column]
-#     if cell == '0':
-#         new_board[row][column] = f'1{color}'
-#     else:
-#         count = int(cell[0]) + 1
-#         new_board[row][column] = f'{count}{color}'
-#     explode(new_board, row, column, color)
-#     return new_board
 
 def play_move(board, row, column, color):
     new_board = deepcopy(board)
